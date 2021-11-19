@@ -1,0 +1,21 @@
+name: Deploy k8s
+on:
+  workflow_run:
+    workflows: ["JIB CI"]
+    types:
+      - completed
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-hub/kubectl@master
+        env:
+         KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_BASE64_DATA }}
+        with:
+         args: apply -f k8s.yml
+      - uses: actions-hub/kubectl@master
+        env:
+         KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_BASE64_DATA }}
+        with:
+         args: rollout restart deployment/junction-backend

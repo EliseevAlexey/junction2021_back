@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "junction-backend"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "junction-backend"
+  template:
+    metadata:
+      labels:
+        app: "junction-backend"
+    spec:
+      imagePullSecrets:
+        - name: docker-registry-secret-json
+      containers:
+        - name: "junction-backend"
+          image: "ghcr.io/aeliseev/team-13-junction-backend:latest"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /api/actuator/health
+              port: 8080
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /api/actuator/health
+              port: 8080
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 10
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: junction-backend-ingress
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+#    traefik.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - pathType: Prefix
+        path: /api
+        backend:
+          service:
+            name: junction-backend
+            port:
+              number: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "junction-backend"
+#  namespace: junction-backend
+spec:
+  selector:
+    app: "junction-backend"
+  type: LoadBalancer
+  ports:
+    - protocol: "TCP"
+      port: 8080

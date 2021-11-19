@@ -1,0 +1,29 @@
+spring.application.name: ${APP_NAME}
+server.port: ${APP_PORT}
+
+server.servlet.context-path: /api
+
+spring:
+  datasource:
+    url: ${DB_URL}?ApplicationName=${APP_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc.lob.non_contextual_creation: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        types.print.banner: false
+    open-in-view: false
+  liquibase:
+    change-log: classpath:liquibase/changelog.yml
+    database-change-log-lock-table: liquibase_change_lock
+    database-change-log-table: liquibase_change_log
+    liquibase-schema: public
+
+method-logging.enabled: true
