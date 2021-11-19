@@ -3,6 +3,7 @@ package com.team13.junction.service
 import com.team13.junction.dao.UserDao
 import com.team13.junction.model.User
 import com.team13.junction.model.UserDto
+import com.team13.junction.model.UserRole
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,6 +18,7 @@ class UserService(private val dao: UserDao) {
         dao.save(
             User(
                 name = userDto.name,
+                role = UserRole.USER,
             )
         )
 
