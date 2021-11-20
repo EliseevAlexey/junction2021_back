@@ -11,3 +11,6 @@ databaseChangeLog:
   - include:
       relativeToChangelogFile: true
       file: migrations/sensors.sql
+  - include:
+      relativeToChangelogFile: true
+      file: migrations/forecast.sql

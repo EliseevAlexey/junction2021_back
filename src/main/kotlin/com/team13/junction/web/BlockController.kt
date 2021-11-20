@@ -48,7 +48,5 @@ class BlockController(
     @PostMapping("/{blockId}/sensors")
     fun createSensor(@PathVariable blockId: Long, @RequestBody sensorDto: SensorDto): SensorDto =
         sensorService.create(blockId, sensorDto)
-            .toDto()
-
 
 }

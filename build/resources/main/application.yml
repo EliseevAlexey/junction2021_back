@@ -17,7 +17,7 @@ spring:
       hibernate:
         format_sql: true
         jdbc.lob.non_contextual_creation: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.spatial.dialect.postgis.PostgisDialect
         types.print.banner: false
     open-in-view: false
   liquibase:

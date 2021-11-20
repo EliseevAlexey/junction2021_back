@@ -1,10 +1,8 @@
 package com.team13.junction.model
 
 import com.vladmihalcea.hibernate.type.json.JsonType
-import org.hibernate.annotations.Type
 import org.hibernate.annotations.TypeDef
 import org.hibernate.annotations.TypeDefs
-import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.EnumType
 import javax.persistence.Enumerated
@@ -33,23 +31,11 @@ class Sensor(
     @Id
     @GeneratedValue(strategy = IDENTITY)
     val id: Long = 0
-
-    @Type(type = "json")
-    @Column(columnDefinition = "jsonb")
-    var data: Array<SensorData> = emptyArray()
 }
 
 data class SensorDto(
     val id: Long? = null,
     val type: SensorType,
     val name: String,
+    val stats: SensorStats?,
 )
-
-fun Sensor.toDto() =
-    SensorDto(
-        id = id,
-        type = type,
-        name = name,
-    )
-
-fun List<Sensor>.toDtos() = map { it.toDto() }
