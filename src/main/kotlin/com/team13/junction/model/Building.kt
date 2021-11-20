@@ -26,12 +26,14 @@ class Building(
 data class BuildingDto(
     val id: Long? = null,
     val name: String,
+    val point: Geometry?,
 )
 
 fun Building.toDto() =
     BuildingDto(
         id = id,
         name = name,
+        point = point,
     )
 
 fun List<Building>.toDtos() = map { it.toDto() }

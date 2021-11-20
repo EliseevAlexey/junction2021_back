@@ -14,3 +14,6 @@ databaseChangeLog:
   - include:
       relativeToChangelogFile: true
       file: migrations/forecast.sql
+  - include:
+      relativeToChangelogFile: true
+      file: migrations/events.sql

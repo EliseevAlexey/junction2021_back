@@ -2,19 +2,22 @@
 
 
 --changeset alex eliseev:1
---comment create forecast table
-create table if not exists forecast
+--comment create water_forecast table
+create table if not exists water_forecast
 (
-    ds          timestamp        not null,
-    yhat        double precision not null,
-    yhat_lower  double precision not null,
-    yhat_upper  double precision,
-    building_id bigint           not null,
-    block_id    bigint           not null,
-    sensor_id   bigint           not null,
-    constraint forecast_pk
-        unique (ds, sensor_id)
+    index              bigint    not null
+        constraint forecast_pk
+            primary key,
+    date               timestamp not null,
+    cold_water_neutral double precision,
+    cold_water_lower   double precision,
+    cold_water_upper   double precision,
+    hot_water_neutral  double precision,
+    hot_water_lower    double precision,
+    hot_water_upper    double precision,
+    building_id        bigint    not null,
+    block_id           bigint    not null,
+    sensor_id          bigint    not null
 );
-
-create index if not exists forecast_ds_building_id_block_id_sensor_id_index
-    on forecast (ds, building_id, block_id, sensor_id);
+create index if not exists ix_public_water_forecast_index
+    on water_forecast (index);

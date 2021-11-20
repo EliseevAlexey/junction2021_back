@@ -1,14 +1,13 @@
 package com.team13.junction.dao
 
-import com.team13.junction.model.Forecast
-import com.team13.junction.model.ForecastId
+import com.team13.junction.model.WaterForecast
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import java.sql.Timestamp
 
-interface ForecastDao : JpaRepository<Forecast, ForecastId> {
+interface ForecastDao : JpaRepository<WaterForecast, Long> {
     @Query(
-        value = "select * from forecast where ds between :start and :to and building_id = :buildingId and block_id = :blockId and sensor_id = :sensorId",
+        value = "select * from water_forecast where date between :start and :to and building_id = :buildingId and block_id = :blockId and sensor_id = :sensorId",
         nativeQuery = true
     )
     fun findBy(
@@ -17,5 +16,5 @@ interface ForecastDao : JpaRepository<Forecast, ForecastId> {
         buildingId: Long,
         blockId: Long,
         sensorId: Long
-    ): List<Forecast>
+    ): List<WaterForecast>
 }

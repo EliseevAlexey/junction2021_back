@@ -3,7 +3,7 @@ package com.team13.junction.service
 import com.team13.junction.dao.SensorDao
 import com.team13.junction.model.Sensor
 import com.team13.junction.model.SensorDto
-import com.team13.junction.model.SensorStats
+import com.team13.junction.model.ui.Chart
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -13,7 +13,7 @@ import java.time.LocalDateTime
 class SensorService(
     private val dao: SensorDao,
     private val blockService: BlockService,
-    private val sensorStatsService: SensorStatsService,
+    private val waterStatsService: WaterStatsService,
 ) {
 
     fun get(id: Long): SensorDto =
@@ -28,14 +28,14 @@ class SensorService(
         SensorDto(
             id = id,
             name = name,
-            type = type,
+            type = sensorSubgroup,
             stats = if (from != null && to != null) getStats(this, from, to) else null
         )
 
-    private fun getStats(sensor: Sensor, from: LocalDateTime, to: LocalDateTime): SensorStats =
-        sensorStatsService.getStats(sensor, from, to)
+    private fun getStats(sensor: Sensor, from: LocalDateTime, to: LocalDateTime): Chart =
+        waterStatsService.getStats(sensor, from, to)
 
-    private fun getById(id: Long): Sensor =
+    fun getById(id: Long): Sensor =
         dao.findByIdOrNull(id) ?: throw EntityNotFound("Sensor with ID #$id not found")
 
     fun create(blockId: Long, dto: SensorDto): SensorDto {
@@ -44,7 +44,7 @@ class SensorService(
         return dao.save(
             Sensor(
                 name = dto.name,
-                type = dto.type,
+                sensorSubgroup = dto.type,
                 block = block,
             )
         ).toDto()

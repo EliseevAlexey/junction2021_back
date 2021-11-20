@@ -22,3 +22,10 @@ create table if not exists public.sensors_data
     sensor_id   bigint references public.sensors (id)   not null,
     data        JSONB                                   not null
 );
+
+--changeset alex eliseev:3
+--comment Add column sensor type
+alter table if exists public.sensors_data
+    ADD COLUMN sensor_type text not null;
+
+
