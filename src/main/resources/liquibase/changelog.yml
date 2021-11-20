@@ -17,3 +17,6 @@ databaseChangeLog:
   - include:
       relativeToChangelogFile: true
       file: migrations/events.sql
+  - include:
+      relativeToChangelogFile: true
+      file: migrations/meetups.sql

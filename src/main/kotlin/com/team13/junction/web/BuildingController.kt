@@ -3,8 +3,6 @@ package com.team13.junction.web
 import com.team13.junction.config.EnableLogging
 import com.team13.junction.model.BlockDto
 import com.team13.junction.model.BuildingDto
-import com.team13.junction.model.SensorGroup
-import com.team13.junction.model.SensorGroup.*
 import com.team13.junction.model.toDto
 import com.team13.junction.model.toDtos
 import com.team13.junction.model.ui.MainUiPage
@@ -56,29 +54,54 @@ class BuildingController(
         service.getAll()
             .toDtos()
 
-
     @PostMapping("/{buildingId}/blocks")
     fun createBlock(@PathVariable buildingId: Long, @RequestBody dto: BlockDto): BlockDto =
         blockService.create(buildingId, dto)
             .toDto()
 
-    @GetMapping("/data/water")
+    @GetMapping("/data")
     fun getAllData(
         @RequestParam @DateTimeFormat(iso = DATE_TIME) from: LocalDateTime,
         @RequestParam @DateTimeFormat(iso = DATE_TIME) to: LocalDateTime,
     ): MainUiPage =
-        service.getData(WATER, from, to)
+        service.getData(SensorUtil.ALL, from, to)
 
-    @GetMapping("/{id}/data/water")
-    fun getData(
+    @GetMapping("/{id}/data")
+    fun getAllData(
         @PathVariable id: Long,
         @RequestParam @DateTimeFormat(iso = DATE_TIME) from: LocalDateTime,
         @RequestParam @DateTimeFormat(iso = DATE_TIME) to: LocalDateTime,
     ): MainUiPage =
-        service.getData(id, WATER, from, to)
+        service.getData(id, SensorUtil.ALL, from, to)
 
+    @GetMapping("/data/water")
+    fun getAllWaterData(
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) from: LocalDateTime,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) to: LocalDateTime,
+    ): MainUiPage =
+        service.getData(SensorUtil.WATER, from, to)
 
-    companion object {
-        private val WATER = listOf(WATER_COLD, WATER_HOT)
-    }
+    @GetMapping("/{id}/data/water")
+    fun getWaterData(
+        @PathVariable id: Long,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) from: LocalDateTime,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) to: LocalDateTime,
+    ): MainUiPage =
+        service.getData(id, SensorUtil.WATER, from, to)
+
+    @GetMapping("/data/energy")
+    fun getAllEnergyData(
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) from: LocalDateTime,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) to: LocalDateTime,
+    ): MainUiPage =
+        service.getData(SensorUtil.ENERGY, from, to)
+
+    @GetMapping("/{id}/data/energy")
+    fun getEnergyData(
+        @PathVariable id: Long,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) from: LocalDateTime,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) to: LocalDateTime,
+    ): MainUiPage =
+        service.getData(id, SensorUtil.ENERGY, from, to)
+
 }

@@ -1,8 +1,9 @@
 package com.team13.junction.service
 
-import com.team13.junction.dao.ForecastDao
+import com.team13.junction.dao.WaterForecastDao
 import com.team13.junction.model.Sensor
 import com.team13.junction.model.ui.Chart
+import com.team13.junction.model.ui.ChartData
 import com.team13.junction.model.ui.ChartItem
 import com.team13.junction.service.ThresholdService.getThreshold
 import org.springframework.stereotype.Service
@@ -11,7 +12,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 @Service
-class WaterStatsService(private val waterForecastDao: ForecastDao) {
+class WaterStatsService(private val waterForecastDao: WaterForecastDao) {
 
     fun getStats(sensor: Sensor, from: LocalDateTime, to: LocalDateTime) =
         Chart(
@@ -24,7 +25,7 @@ class WaterStatsService(private val waterForecastDao: ForecastDao) {
         blockId: Long,
         sensorId: Long,
         from: LocalDateTime,
-        to: LocalDateTime
+        to: LocalDateTime,
     ): List<ChartItem> {
         return findBy(
             from = from,
@@ -34,6 +35,24 @@ class WaterStatsService(private val waterForecastDao: ForecastDao) {
             sensorId = sensorId
         )
     }
+
+    fun getStats(
+        sensorIds: List<Long>,
+        from: LocalDateTime,
+        to: LocalDateTime
+    ): List<ChartData> =
+        waterForecastDao.findByDateBetweenAndSensorIdIn(
+            from = from.toTimestamp(),
+            to = to.toTimestamp(),
+            sensorIds = sensorIds
+        ).map {
+            ChartData(
+                sensorId = it.sensorId,
+                blockId = it.blockId,
+                date = it.date.toLocalDateTime(),
+                value = it.waterNeutral,
+            )
+        }
 
     private fun getData(sensor: Sensor, from: LocalDateTime, to: LocalDateTime): List<ChartItem> =
         findBy(
@@ -52,7 +71,7 @@ class WaterStatsService(private val waterForecastDao: ForecastDao) {
         to: LocalDateTime,
     ): List<ChartItem> =
         waterForecastDao.findBy(
-            start = from.toTimestamp(),
+            from = from.toTimestamp(),
             to = to.toTimestamp(),
             buildingId = buildingId,
             blockId = blockId,
@@ -60,7 +79,7 @@ class WaterStatsService(private val waterForecastDao: ForecastDao) {
         ).map {
             ChartItem(
                 date = it.date.toLocalDateTime(),
-                value = it.coldWaterNeutral ?: 0.0, // FIXME
+                value = it.waterNeutral,
             )
         }
 

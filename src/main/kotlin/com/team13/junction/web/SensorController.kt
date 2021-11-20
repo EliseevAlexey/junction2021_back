@@ -2,6 +2,7 @@ package com.team13.junction.web
 
 import com.team13.junction.config.EnableLogging
 import com.team13.junction.model.SensorDto
+import com.team13.junction.model.ui.MainUiPage
 import com.team13.junction.service.SensorService
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME
@@ -33,16 +34,31 @@ class SensorController(private val service: SensorService) {
         service.delete(id)
     }
 
-    @GetMapping("/{id}/data")
-    fun getData(
-        @PathVariable id: Long,
-        @RequestParam @DateTimeFormat(iso = DATE_TIME) from: LocalDateTime,
-        @RequestParam @DateTimeFormat(iso = DATE_TIME) to: LocalDateTime,
-    ): SensorDto =
-        service.getData(id, from, to)
-
     @GetMapping
     fun getAll(): List<SensorDto> =
         service.getAll()
 
+    @GetMapping("/{id}/data")
+    fun getAllData(
+        @PathVariable id: Long,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) from: LocalDateTime,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) to: LocalDateTime,
+    ): MainUiPage =
+        service.getData(id, SensorUtil.ALL, from, to)
+
+    @GetMapping("/{id}/data/water")
+    fun getWaterData(
+        @PathVariable id: Long,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) from: LocalDateTime,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) to: LocalDateTime,
+    ): MainUiPage =
+        service.getData(id, SensorUtil.WATER, from, to)
+
+    @GetMapping("/{id}/data/energy")
+    fun getEnergyData(
+        @PathVariable id: Long,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) from: LocalDateTime,
+        @RequestParam @DateTimeFormat(iso = DATE_TIME) to: LocalDateTime,
+    ): MainUiPage =
+        service.getData(id, SensorUtil.ENERGY, from, to)
 }

@@ -8,12 +8,14 @@ import java.time.LocalDateTime
 data class MainUiPage(
     val buildings: List<BuildingUiDto>,
     val totals: List<TotalUiDto>,
+    val eventPage: EventUiPage,
 )
 
 data class BuildingUiDto(
     val id: Long,
     val name: String,
     val point: Geometry?,
+    val charts: Map<SensorGroup, Chart>,
     val blocks: List<BlockUiDto>,
 )
 
@@ -42,6 +44,13 @@ data class Chart(
 )
 
 data class ChartItem(
+    val date: LocalDateTime,
+    val value: Double,
+)
+
+data class ChartData(
+    val sensorId: Long,
+    val blockId: Long,
     val date: LocalDateTime,
     val value: Double,
 )
