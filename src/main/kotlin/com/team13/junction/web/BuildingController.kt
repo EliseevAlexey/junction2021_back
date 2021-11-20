@@ -1,10 +1,12 @@
 package com.team13.junction.web
 
 import com.team13.junction.config.EnableLogging
-import com.team13.junction.model.UserDto
+import com.team13.junction.model.BlockDto
+import com.team13.junction.model.BuildingDto
 import com.team13.junction.model.toDto
 import com.team13.junction.model.toDtos
-import com.team13.junction.service.UserService
+import com.team13.junction.service.BlockService
+import com.team13.junction.service.BuildingService
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -15,23 +17,26 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/buildings")
 @EnableLogging
-class UserController(private val service: UserService) {
+class BuildingController(
+    private val service: BuildingService,
+    private val blockService: BlockService
+) {
 
     @GetMapping("/{id}")
-    fun get(@PathVariable id: Long): UserDto =
+    fun get(@PathVariable id: Long): BuildingDto =
         service.get(id)
             .toDto()
 
     @PostMapping
-    fun create(@RequestBody userDto: UserDto): UserDto =
-        service.create(userDto)
+    fun create(@RequestBody buildingDto: BuildingDto): BuildingDto =
+        service.create(buildingDto)
             .toDto()
 
     @PutMapping("/{id}")
-    fun update(@PathVariable id: Long, @RequestBody userDto: UserDto): UserDto =
-        service.update(id, userDto)
+    fun update(@PathVariable id: Long, @RequestBody buildingDto: BuildingDto): BuildingDto =
+        service.update(id, buildingDto)
             .toDto()
 
     @DeleteMapping("/{id}")
@@ -40,8 +45,14 @@ class UserController(private val service: UserService) {
     }
 
     @GetMapping
-    fun getAll(): List<UserDto> =
+    fun getAll(): List<BuildingDto> =
         service.getAll()
             .toDtos()
+
+
+    @PostMapping("/{buildingId}/blocks")
+    fun createBlock(@PathVariable buildingId: Long, @RequestBody dto: BlockDto): BlockDto =
+        blockService.create(buildingId, dto)
+            .toDto()
 
 }

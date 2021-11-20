@@ -1,13 +1,13 @@
 databaseChangeLog:
   - include:
       relativeToChangelogFile: true
-      file: migrations/create_users.sql
+      file: migrations/users.sql
   - include:
       relativeToChangelogFile: true
-      file: migrations/update_users.sql
+      file: migrations/buildings.sql
   - include:
       relativeToChangelogFile: true
-      file: migrations/create_building.sql
+      file: migrations/blocks.sql
   - include:
       relativeToChangelogFile: true
-      file: migrations/create_sensor.sql
+      file: migrations/sensors.sql

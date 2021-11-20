@@ -1,10 +1,12 @@
 package com.team13.junction.web
 
 import com.team13.junction.config.EnableLogging
-import com.team13.junction.model.UserDto
+import com.team13.junction.model.BlockDto
+import com.team13.junction.model.SensorDto
 import com.team13.junction.model.toDto
 import com.team13.junction.model.toDtos
-import com.team13.junction.service.UserService
+import com.team13.junction.service.BlockService
+import com.team13.junction.service.SensorService
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -15,23 +17,22 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/blocks")
 @EnableLogging
-class UserController(private val service: UserService) {
+class BlockController(
+    private val service: BlockService,
+    private val sensorService: SensorService,
+) {
 
     @GetMapping("/{id}")
-    fun get(@PathVariable id: Long): UserDto =
+    fun get(@PathVariable id: Long): BlockDto =
         service.get(id)
             .toDto()
 
-    @PostMapping
-    fun create(@RequestBody userDto: UserDto): UserDto =
-        service.create(userDto)
-            .toDto()
 
     @PutMapping("/{id}")
-    fun update(@PathVariable id: Long, @RequestBody userDto: UserDto): UserDto =
-        service.update(id, userDto)
+    fun update(@PathVariable id: Long, @RequestBody blockDto: BlockDto): BlockDto =
+        service.update(id, blockDto)
             .toDto()
 
     @DeleteMapping("/{id}")
@@ -40,8 +41,14 @@ class UserController(private val service: UserService) {
     }
 
     @GetMapping
-    fun getAll(): List<UserDto> =
+    fun getAll(): List<BlockDto> =
         service.getAll()
             .toDtos()
+
+    @PostMapping("/{blockId}/sensors")
+    fun createSensor(@PathVariable blockId: Long, @RequestBody sensorDto: SensorDto): SensorDto =
+        sensorService.create(blockId, sensorDto)
+            .toDto()
+
 
 }

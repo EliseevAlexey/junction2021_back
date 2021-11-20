@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class UserService(private val dao: UserDao) {
 
-    fun get(id: Long): User? =
-        dao.findByIdOrNull(id) ?: throw UserNotFoundException(id)
+    fun get(id: Long): User =
+        dao.findByIdOrNull(id) ?: throw EntityNotFound("User with ID #$id not found")
 
     fun create(userDto: UserDto): User =
         dao.save(
@@ -23,22 +23,18 @@ class UserService(private val dao: UserDao) {
         )
 
     @Transactional
-    fun update(id: Long, userDto: UserDto): User? =
-        get(id)?.let {
+    fun update(id: Long, userDto: UserDto): User =
+        get(id).let {
             it.name = userDto.name
             dao.save(it)
         }
 
     @Transactional
     fun delete(id: Long) {
-        get(id)?.let { dao.delete(it) }
+        get(id).let { dao.delete(it) }
     }
 
     fun getAll(): List<User> =
         dao.findAll()
 
-}
-
-data class UserNotFoundException(override val message: String) : Exception(message) {
-    constructor(id: Long) : this("User with ID #$id not found")
 }
