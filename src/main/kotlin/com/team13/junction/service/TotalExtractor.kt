@@ -1,8 +1,12 @@
 package com.team13.junction.service
 
-import com.team13.junction.model.SensorGroup
+import com.team13.junction.model.SensorGroup.ENERGY
+import com.team13.junction.model.SensorGroup.WATER_COLD
+import com.team13.junction.model.SensorGroup.WATER_HOT
+import com.team13.junction.model.ValueUnit
 import com.team13.junction.model.ui.BuildingUiDto
 import com.team13.junction.model.ui.TotalUiDto
+import com.team13.junction.util.UnitConverter.toMoney
 import com.team13.junction.util.UnitConverter.toUnit
 
 object TotalExtractor {
@@ -18,32 +22,48 @@ object TotalExtractor {
             buildingUiDto.blocks.forEach { blockUiDto ->
                 blockUiDto.charts.forEach { (sensorGroup, chart) ->
                     when (sensorGroup) {
-                        SensorGroup.WATER_HOT -> totalHot += chart.data.sumOf { it.value }
-                        SensorGroup.WATER_COLD -> totalCold += chart.data.sumOf { it.value }
-                        SensorGroup.ENERGY -> totalEnergy += chart.data.sumOf { it.value }
+                        WATER_HOT -> totalHot += chart.data.sumOf { it.value }
+                        WATER_COLD -> totalCold += chart.data.sumOf { it.value }
+                        ENERGY -> totalEnergy += chart.data.sumOf { it.value }
                     }
                 }
             }
         }
-        if (totalHot != 0.0) addTotals(SensorGroup.WATER_HOT, totals, totalHot)
-        if (totalCold != 0.0) addTotals(SensorGroup.WATER_COLD, totals, totalCold)
-        if (totalEnergy != 0.0) addTotals(SensorGroup.ENERGY, totals, totalEnergy)
 
-        return totals
-    }
-
-    private fun addTotals(
-        sensorGroup: SensorGroup,
-        totals: MutableList<TotalUiDto>,
-        buildingsData: Double
-    ) {
-        totals.add(
-            TotalUiDto(
-                sensorGroup = sensorGroup,
-                values = buildingsData,
-                unit = sensorGroup.toUnit()
+        val waterSum = totalHot + totalCold
+        if (waterSum != 0.0) {
+            totals.add(
+                TotalUiDto(
+                    sensorGroup = WATER_HOT,
+                    values = waterSum,
+                    unit = WATER_HOT.toUnit()
+                )
             )
-        )
+            totals.add(
+                TotalUiDto(
+                    sensorGroup = WATER_HOT,
+                    values = totalHot * WATER_HOT.toMoney() + totalCold * WATER_COLD.toMoney(),
+                    unit = ValueUnit.EURO,
+                )
+            )
+        }
+        if (totalEnergy != 0.0) {
+            totals.add(
+                TotalUiDto(
+                    sensorGroup = ENERGY,
+                    values = totalEnergy,
+                    unit = ENERGY.toUnit()
+                )
+            )
+            totals.add(
+                TotalUiDto(
+                    sensorGroup = ENERGY,
+                    values = totalEnergy * ENERGY.toMoney(),
+                    unit = ValueUnit.EURO,
+                )
+            )
+        }
+        return totals
     }
 
 }

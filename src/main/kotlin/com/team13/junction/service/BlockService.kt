@@ -4,7 +4,7 @@ import com.team13.junction.dao.BlockDao
 import com.team13.junction.model.Block
 import com.team13.junction.model.BlockData
 import com.team13.junction.model.BlockDto
-import com.team13.junction.model.Building
+import com.team13.junction.model.ChartData
 import com.team13.junction.model.Sensor
 import com.team13.junction.model.SensorGroup
 import com.team13.junction.model.ui.BlockUiDto
@@ -13,7 +13,9 @@ import com.team13.junction.model.ui.EventUi
 import com.team13.junction.model.ui.EventUiPage
 import com.team13.junction.model.ui.MainUiPage
 import com.team13.junction.model.ui.SensorUiDto
+import com.team13.junction.model.ui.toPointDto
 import com.team13.junction.service.BlockExtractor.extractBlockCharts
+import com.team13.junction.util.UnitConverter.toUnit
 import com.team13.junction.web.SensorUtil.ALL
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -64,12 +66,19 @@ class BlockService(
 
         val building = sensors.first().block.building
 
-        val blocksData = listOf(getBlockData(building, block, from, to))
+        // prepare data
+        val sensorsById = sensors.associateBy { it.id }
+        val sensorIds = sensorsById.keys.toList()
+        val stats = waterStatsService.getStats(sensorIds = sensorIds, from = from, to = to)
+        // prepare data
+
+
+        val blocksData = listOf(getBlockData(block, stats))
         val buildingsData = listOf(
             BuildingUiDto(
                 id = building.id,
                 name = building.name,
-                point = building.point,
+                point = building.point?.toPointDto(),
                 charts = chartService.extractBuildingCharts(blocksData),
                 blocks = blocksData.map { blockData ->
                     BlockUiDto(
@@ -81,6 +90,7 @@ class BlockService(
                                 id = sensorData.sensorId,
                                 name = sensorData.sensorName,
                                 charts = sensorData.charts,
+                                type = sensorData.sensorSubgroup
                             )
                         }
                     )
@@ -90,19 +100,17 @@ class BlockService(
         return MainUiPage(
             buildings = buildingsData,
             totals = TotalExtractor.createTotals(buildingsData),
-            eventPage = createEventPage(sensors, block, from, to)
+            eventPage = createEventPage(block, stats, sensorsById)
         )
     }
 
     private fun getBlockData(
-        building: Building,
         block: Block,
-        from: LocalDateTime,
-        to: LocalDateTime
+        stats: List<ChartData>,
     ): BlockData {
         val blockId = block.id
         val sensorDatas = block.sensors
-            .map { sensor -> chartService.getSensorData(sensor, ALL, building.id, blockId, from, to) }
+            .map { sensor -> chartService.getSensorData(sensor, ALL, stats) }
         return BlockData(
             blockId = blockId,
             blockName = block.name,
@@ -112,24 +120,27 @@ class BlockService(
     }
 
     private fun createEventPage(
-        sensors: List<Sensor>,
         block: Block,
-        from: LocalDateTime,
-        to: LocalDateTime
+        stats: List<ChartData>,
+        sensorsById: Map<Long, Sensor>,
     ): EventUiPage {
 
-        val sensorsById = sensors.associateBy { it.id }
-        val sensorIds = sensorsById.keys.toList()
-
-        val stats = waterStatsService.getStats(sensorIds = sensorIds, from = from, to = to)
-
         val events = stats.map {
+            val sensor = sensorsById.getValue(it.sensorId)
+            val threshold = ThresholdService.getThreshold(sensor.sensorSubgroup)
+            val currentValue = it.value
+            val isEco = currentValue < threshold
             EventUi(
                 name = "Some event",
-                sensorName = sensorsById.getValue(it.sensorId).name,
-                value = it.value,
+                type = sensor.sensorSubgroup,
+                sensorName = sensor.name,
+                value = currentValue,
+                unit = sensor.sensorSubgroup.group.toUnit(),
                 blockName = block.name,
                 dateTime = it.date,
+                message = if (isEco) "OK" else "Think more ECO-way",
+                isEco = isEco,
+                isAnomaly = false, // TODO
             )
         }
 

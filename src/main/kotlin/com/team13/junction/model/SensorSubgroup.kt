@@ -5,4 +5,5 @@ enum class SensorSubgroup(val group: SensorGroup) {
     WASHER_HOT(SensorGroup.WATER_HOT), WASHER_COLD(SensorGroup.WATER_COLD),
     DISHWASHER_HOT(SensorGroup.WATER_HOT), DISHWASHER_COLD(SensorGroup.WATER_COLD),
     MIXER_HOT(SensorGroup.WATER_HOT), MIXER_COLD(SensorGroup.WATER_COLD),
+    ELECTRICITY(SensorGroup.ENERGY)
 }

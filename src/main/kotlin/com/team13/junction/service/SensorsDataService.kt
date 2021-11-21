@@ -4,6 +4,7 @@ import com.team13.junction.dao.SensorDataDao
 import com.team13.junction.model.SensorData
 import com.team13.junction.model.SensorDataJson
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 
 @Service
 class SensorsDataService(
@@ -32,5 +33,12 @@ class SensorsDataService(
             )
         )
     }
+
+    fun findByDateBetweenAndSensorIdIn(from: LocalDateTime, to: LocalDateTime, sensorIds: List<Long>): List<SensorData> =
+        dao.findByTimestampBetweenAndSensorIdIn(
+            from = from,
+            to = to,
+            sensorIds = sensorIds
+        )
 }
 

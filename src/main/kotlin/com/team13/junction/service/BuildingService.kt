@@ -1,14 +1,13 @@
 package com.team13.junction.service
 
 import com.team13.junction.dao.BuildingDao
+import com.team13.junction.model.Block
 import com.team13.junction.model.BlockData
 import com.team13.junction.model.Building
 import com.team13.junction.model.BuildingDto
+import com.team13.junction.model.ChartData
 import com.team13.junction.model.Sensor
 import com.team13.junction.model.SensorGroup
-import com.team13.junction.model.SensorGroup.ENERGY
-import com.team13.junction.model.SensorGroup.WATER_COLD
-import com.team13.junction.model.SensorGroup.WATER_HOT
 import com.team13.junction.model.SensorModel
 import com.team13.junction.model.SensorSubgroup
 import com.team13.junction.model.ui.BlockUiDto
@@ -19,7 +18,7 @@ import com.team13.junction.model.ui.EventUi
 import com.team13.junction.model.ui.EventUiPage
 import com.team13.junction.model.ui.MainUiPage
 import com.team13.junction.model.ui.SensorUiDto
-import com.team13.junction.model.ui.TotalUiDto
+import com.team13.junction.model.ui.toPointDto
 import com.team13.junction.service.BlockExtractor.extractBlockCharts
 import com.team13.junction.service.ThresholdService.getThreshold
 import com.team13.junction.service.TotalExtractor.createTotals
@@ -39,12 +38,6 @@ class BuildingService(
 
     fun get(id: Long): Building =
         dao.findByIdOrNull(id) ?: throw EntityNotFound("Building with ID #$id not found")
-
-    fun getByBlockId(blockId: Long): Building {
-        return dao.findAll()
-            .find { blockId in it.blocks.map { it.id } }
-            ?: throw EntityNotFound("Building with Block ID #$blockId not found")
-    }
 
     fun create(dto: BuildingDto) =
         dao.save(
@@ -76,40 +69,55 @@ class BuildingService(
     ): MainUiPage {
 
         val buildings = getAll()
-        val buildingsData = buildings.map { building ->
-            getBuildingData(building, groups, from, to)
-        }
-        return MainUiPage(
-            buildings = buildingsData,
-            totals = createTotals(buildingsData),
-            eventPage = getEvents(buildings, from, to)
-        )
-    }
 
-    private fun getEvents(buildings: List<Building>, from: LocalDateTime, to: LocalDateTime): EventUiPage {
+        // Prepare data
         val sensorIds = buildings.flatMap { building ->
             building.blocks.flatMap { block ->
-                block.sensors.map { sensor ->
-                    sensor.id
-                }
+                block.sensors.map { it.id }
             }
         }
         val blocks = buildings.flatMap { it.blocks }
         val blocksById = blocks.associateBy { it.id }
         val sensors = blocks.flatMap { it.sensors }
         val sensorsById = sensors.associateBy { it.id }
-
-
         val stats = waterStatsService.getStats(sensorIds, from, to)
+        // Prepare data
+
+
+        val buildingsData = buildings.map { building ->
+            getBuildingData(building, groups, stats)
+        }
+        return MainUiPage(
+            buildings = buildingsData,
+            totals = createTotals(buildingsData),
+            eventPage = getEvents(stats, sensors, sensorsById, blocksById)
+        )
+    }
+
+    private fun getEvents(
+        stats: List<ChartData>,
+        sensors: List<Sensor>,
+        sensorsById: Map<Long, Sensor>,
+        blocksById: Map<Long, Block>
+    ): EventUiPage {
 
 
         val events = stats.map {
+            val threshold = getThreshold(sensors[0].sensorSubgroup)
+            val currentValue = it.value
+            val isEco = currentValue < threshold
+            val sensor = sensorsById.getValue(it.sensorId)
             EventUi(
                 name = "Some event",
-                sensorName = sensorsById.getValue(it.sensorId).name,
-                value = it.value,
+                sensorName = sensor.name,
+                value = currentValue,
+                type = sensor.sensorSubgroup,
+                unit = sensor.sensorSubgroup.group.toUnit(),
                 blockName = blocksById.getValue(it.blockId).name,
                 dateTime = it.date,
+                message = if (isEco) "OK" else "Think more ECO-way",
+                isEco = isEco,
+                isAnomaly = false, // FIXME
             )
         }
 
@@ -121,8 +129,7 @@ class BuildingService(
     private fun getBuildingData(
         building: Building,
         groups: List<SensorGroup>,
-        from: LocalDateTime,
-        to: LocalDateTime
+        stats: List<ChartData>
     ): BuildingUiDto {
         val buildingId = building.id
         val buildingName = building.name
@@ -130,7 +137,7 @@ class BuildingService(
         val blocksData = building.blocks.map { block ->
             val blockId = block.id
             val sensorDatas = block.sensors
-                .map { sensor -> getSensorData(sensor, groups, buildingId, blockId, from, to) }
+                .map { sensor -> getSensorData(sensor, groups, stats) }
             BlockData(
                 blockId = blockId,
                 blockName = block.name,
@@ -142,7 +149,7 @@ class BuildingService(
         return BuildingUiDto(
             id = buildingId,
             name = buildingName,
-            point = buildingPoint,
+            point = buildingPoint?.toPointDto(),
             charts = chartService.extractBuildingCharts(blocksData),
             blocks = blocksData.map { blockData ->
                 BlockUiDto(
@@ -154,6 +161,7 @@ class BuildingService(
                             id = sensorData.sensorId,
                             name = sensorData.sensorName,
                             charts = sensorData.charts,
+                            type = sensorData.sensorSubgroup
                         )
                     }
                 )
@@ -164,67 +172,62 @@ class BuildingService(
     private fun getSensorData(
         sensor: Sensor,
         groups: List<SensorGroup>,  // For choosing Stats provider
-        buildingId: Long,
-        blockId: Long,
-        from: LocalDateTime,
-        to: LocalDateTime
+        stats: List<ChartData>
     ): SensorModel {
         val sensorId = sensor.id
         val sensorSubgroup = sensor.sensorSubgroup
         val sensorCharts =
-            groups.associateWith { getChart(groups, sensorSubgroup, buildingId, blockId, sensorId, from, to) }
+            groups.associateWith { getChart(sensorSubgroup, stats) }
 
         return SensorModel(
             sensorId = sensorId,
             sensorName = sensor.name,
-            charts = sensorCharts
+            sensorSubgroup = sensor.sensorSubgroup,
+            charts = sensorCharts,
         )
     }
 
     private fun getChart(
-        sensorGroups: List<SensorGroup>, // For choosing Stats provider
         sensorSubgroup: SensorSubgroup,
-        buildingId: Long,
-        blockId: Long,
-        sensorId: Long,
-        from: LocalDateTime,
-        to: LocalDateTime
+        stats: List<ChartData>
     ) =
         Chart(
             threshold = getThreshold(subgroup = sensorSubgroup),
-            data = getStats(sensorGroups, buildingId, blockId, sensorId, from, to)
+            data = stats.map {
+                ChartItem(
+                    date = it.date,
+                    value = it.value,
+                )
+            }
         )
 
     @Transactional
     fun getData(id: Long, groups: List<SensorGroup>, from: LocalDateTime, to: LocalDateTime): MainUiPage {
-        val buildingsData = listOf(getBuildingData(get(id), groups, from, to))
+        val buildings = listOf(get(id))
+
+        // Prepare data
+        val sensorIds = buildings.flatMap { building ->
+            building.blocks.flatMap { block ->
+                block.sensors.map { it.id }
+            }
+        }
+        val blocks = buildings.flatMap { it.blocks }
+        val blocksById = blocks.associateBy { it.id }
+        val sensors = blocks.flatMap { it.sensors }
+        val sensorsById = sensors.associateBy { it.id }
+        val stats = waterStatsService.getStats(sensorIds, from, to)
+        // Prepare data
+
+
+        val buildingsData = buildings.map { building ->
+            getBuildingData(building, groups, stats)
+        }
         return MainUiPage(
             buildings = buildingsData,
             totals = createTotals(buildingsData),
             eventPage = EventUiPage(events = emptyMap()), // FIXME
         )
     }
-
-    private fun getStats(
-        groups: List<SensorGroup>,
-        buildingId: Long,
-        blockId: Long,
-        sensorId: Long,
-        from: LocalDateTime,
-        to: LocalDateTime,
-    ): List<ChartItem> =
-        if (groups.containsAll(listOf(WATER_COLD, WATER_HOT))) {
-            waterStatsService.getStats(
-                buildingId = buildingId,
-                blockId = blockId,
-                sensorId = sensorId,
-                from = from,
-                to = to,
-            )
-        } else {
-            logger.error("$groups not supported")
-            emptyList()
-        }
 
     companion object {
         private val logger = LoggerFactory.getLogger(BuildingService::class.java)

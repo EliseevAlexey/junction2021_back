@@ -1,6 +1,7 @@
 package com.team13.junction.service
 
 import com.team13.junction.model.BlockData
+import com.team13.junction.model.ChartData
 import com.team13.junction.model.Sensor
 import com.team13.junction.model.SensorGroup
 import com.team13.junction.model.SensorModel
@@ -17,58 +18,34 @@ class ChartService(private val waterStatsService: WaterStatsService) {
     fun getSensorData(
         sensor: Sensor,
         groups: List<SensorGroup>,  // For choosing Stats provider
-        buildingId: Long,
-        blockId: Long,
-        from: LocalDateTime,
-        to: LocalDateTime
+        stats: List<ChartData>,
     ): SensorModel {
         val sensorId = sensor.id
         val sensorSubgroup = sensor.sensorSubgroup
         val sensorCharts =
-            groups.associateWith { getChart(groups, sensorSubgroup, buildingId, blockId, sensorId, from, to) }
+            groups.associateWith { getChart(sensorSubgroup, stats) }
 
         return SensorModel(
             sensorId = sensorId,
             sensorName = sensor.name,
-            charts = sensorCharts
+            charts = sensorCharts,
+            sensorSubgroup = sensorSubgroup
         )
     }
 
     private fun getChart(
-        sensorGroups: List<SensorGroup>, // For choosing Stats provider
         sensorSubgroup: SensorSubgroup,
-        buildingId: Long,
-        blockId: Long,
-        sensorId: Long,
-        from: LocalDateTime,
-        to: LocalDateTime
+        stats: List<ChartData>,
     ) =
         Chart(
             threshold = ThresholdService.getThreshold(subgroup = sensorSubgroup),
-            data = getStats(sensorGroups, buildingId, blockId, sensorId, from, to)
+            data = stats.map {
+                ChartItem(
+                    date = it.date,
+                    value = it.value,
+                )
+            }
         )
-
-    private fun getStats(
-        groups: List<SensorGroup>,
-        buildingId: Long,
-        blockId: Long,
-        sensorId: Long,
-        from: LocalDateTime,
-        to: LocalDateTime,
-    ): List<ChartItem> =
-        if (groups.containsAll(listOf(SensorGroup.WATER_COLD, SensorGroup.WATER_HOT))) {
-            waterStatsService.getStats(
-                buildingId = buildingId,
-                blockId = blockId,
-                sensorId = sensorId,
-                from = from,
-                to = to,
-            )
-        } else {
-            logger.error("$groups not supported")
-            emptyList()
-        }
-
 
     fun extractBuildingCharts(blocksData: List<BlockData>): Map<SensorGroup, Chart> {
         val hotList = mutableListOf<Chart>()

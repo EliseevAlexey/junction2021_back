@@ -19,10 +19,10 @@ spec:
           image: "ghcr.io/aeliseev/team-13-junction-backend:latest"
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "2Gi"
+              cpu: "1"
             limits:
-              memory: "512Mi"
+              memory: "2Gi"
               cpu: 1
           ports:
             - name: http

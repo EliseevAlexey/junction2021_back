@@ -1,18 +1,23 @@
 package com.team13.junction.service
 
+import com.team13.junction.config.EnableLogging
 import com.team13.junction.dao.WaterForecastDao
+import com.team13.junction.model.ChartData
 import com.team13.junction.model.Sensor
 import com.team13.junction.model.ui.Chart
-import com.team13.junction.model.ui.ChartData
 import com.team13.junction.model.ui.ChartItem
 import com.team13.junction.service.ThresholdService.getThreshold
+import com.team13.junction.util.toTimestamp
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
-import java.sql.Timestamp
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 @Service
-class WaterStatsService(private val waterForecastDao: WaterForecastDao) {
+@EnableLogging
+class WaterStatsService(
+    private val waterForecastDao: WaterForecastDao,
+    @Lazy private val sensorsDataService: SensorsDataService,
+) {
 
     fun getStats(sensor: Sensor, from: LocalDateTime, to: LocalDateTime) =
         Chart(
@@ -21,28 +26,27 @@ class WaterStatsService(private val waterForecastDao: WaterForecastDao) {
         )
 
     fun getStats(
-        buildingId: Long,
-        blockId: Long,
-        sensorId: Long,
-        from: LocalDateTime,
-        to: LocalDateTime,
-    ): List<ChartItem> {
-        return findBy(
-            from = from,
-            to = to,
-            buildingId = buildingId,
-            blockId = blockId,
-            sensorId = sensorId
-        )
-    }
-
-    fun getStats(
         sensorIds: List<Long>,
         from: LocalDateTime,
         to: LocalDateTime
-    ): List<ChartData> =
-        waterForecastDao.findByDateBetweenAndSensorIdIn(
-            from = from.toTimestamp(),
+    ): List<ChartData> {
+
+        val now = getTo(to)
+        val history = sensorsDataService.findByDateBetweenAndSensorIdIn(
+            from = from,
+            to = now,
+            sensorIds = sensorIds
+        ).map {
+            ChartData(
+                sensorId = it.sensor.id,
+                blockId = it.block.id,
+                date = it.timestamp,
+                value = it.data.consumption,
+            )
+        }
+
+        val forecast = waterForecastDao.findByDateBetweenAndSensorIdIn(
+            from = now.toTimestamp(),
             to = to.toTimestamp(),
             sensorIds = sensorIds
         ).map {
@@ -54,18 +58,30 @@ class WaterStatsService(private val waterForecastDao: WaterForecastDao) {
             )
         }
 
+
+
+        return history.limitPerDay(2) + forecast.limitPerDay(2)
+    }
+
+    private fun List<ChartData>.limitPerDay(limit: Int) =
+        groupBy { it.date.toLocalDate() }
+            .flatMap { (_, list) ->
+                list.take(limit)
+            }
+
+    private fun getTo(to: LocalDateTime): LocalDateTime {
+        val now = LocalDateTime.now()
+        return if (now >= to) to else now
+    }
+
     private fun getData(sensor: Sensor, from: LocalDateTime, to: LocalDateTime): List<ChartItem> =
         findBy(
             from = from,
             to = to,
-            buildingId = sensor.block.building.id,
-            blockId = sensor.block.id,
             sensorId = sensor.id
         )
 
     private fun findBy(
-        buildingId: Long,
-        blockId: Long,
         sensorId: Long,
         from: LocalDateTime,
         to: LocalDateTime,
@@ -73,8 +89,6 @@ class WaterStatsService(private val waterForecastDao: WaterForecastDao) {
         waterForecastDao.findBy(
             from = from.toTimestamp(),
             to = to.toTimestamp(),
-            buildingId = buildingId,
-            blockId = blockId,
             sensorId = sensorId,
         ).map {
             ChartItem(
@@ -82,8 +96,5 @@ class WaterStatsService(private val waterForecastDao: WaterForecastDao) {
                 value = it.waterNeutral,
             )
         }
-
-    private fun LocalDateTime.toTimestamp() =
-        Timestamp.from(this.toInstant(ZoneOffset.UTC))
 
 }

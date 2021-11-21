@@ -19,11 +19,12 @@ class MeetupService(
         dao.save(
             Meetup(
                 name = dto.name,
-                point = dto.point,
                 startDate = dto.startDate,
                 endDate = dto.endDate,
                 cover = dto.cover,
                 type = dto.type,
+                tags = dto.tags.toTypedArray(),
+                description = dto.description
             )
         )
 
@@ -31,11 +32,12 @@ class MeetupService(
     fun update(id: Long, dto: MeetupDto): Meetup =
         get(id).let {
             it.name = dto.name
-            it.point = dto.point
             it.startDate = dto.startDate
             it.endDate = dto.endDate
             it.cover = dto.cover
             it.type = dto.type
+            it.description = dto.description
+            it.tags = dto.tags.toTypedArray()
             dao.save(it)
         }
 
@@ -44,6 +46,11 @@ class MeetupService(
         get(id).let { dao.delete(it) }
     }
 
-    fun getAll(): List<Meetup> =
+    fun getAll(tags: Array<String>): List<Meetup> = if (tags.isEmpty())
         dao.findAll()
+    else
+        dao.findAllByTagsContains(tags)
+
+    fun getAllTags(): List<String> = dao.findAllTags()
+
 }

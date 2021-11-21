@@ -22,3 +22,9 @@ create table if not exists public.meetup_participant
     meetup_id bigint references public.meetups (id),
     primary key (meetup_id)
 );
+
+
+--changeset alex eliseev:3
+--comment Add description field for meetup table
+alter table public.meetups
+add column description text;

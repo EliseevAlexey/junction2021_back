@@ -52,7 +52,7 @@ tasks {
         }
         container {
             environment = jibEnvKeys.associateWith { System.getenv(it) }
-            jvmFlags = listOf("-Xmx256m")
+            jvmFlags = listOf("-Xmx1024m")
         }
     }
 }

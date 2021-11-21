@@ -1,5 +1,7 @@
 package com.team13.junction.model
 
+import com.team13.junction.model.ui.PointDto
+import com.team13.junction.model.ui.toPointDto
 import org.locationtech.jts.geom.Geometry
 import javax.persistence.CascadeType
 import javax.persistence.Entity
@@ -26,14 +28,14 @@ class Building(
 data class BuildingDto(
     val id: Long? = null,
     val name: String,
-    val point: Geometry?,
+    val point: PointDto?,
 )
 
 fun Building.toDto() =
     BuildingDto(
         id = id,
         name = name,
-        point = point,
+        point = point?.toPointDto(),
     )
 
 fun List<Building>.toDtos() = map { it.toDto() }

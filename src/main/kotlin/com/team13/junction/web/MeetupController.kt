@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -42,8 +43,12 @@ class MeetupController(
     }
 
     @GetMapping
-    fun getAll(): List<MeetupDto> =
-        service.getAll()
+    fun getAll(@RequestParam(required = false) tags: Array<String>?): List<MeetupDto> =
+        service.getAll(tags ?: emptyArray())
             .toDtos()
+
+    @GetMapping("/tags")
+    fun getAllTags(): List<String> =
+        service.getAllTags()
 
 }

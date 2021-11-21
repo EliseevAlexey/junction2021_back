@@ -1,8 +1,8 @@
 package com.team13.junction.model.ui
 
 import com.team13.junction.model.SensorGroup
+import com.team13.junction.model.SensorSubgroup
 import com.team13.junction.model.ValueUnit
-import org.locationtech.jts.geom.Geometry
 import java.time.LocalDateTime
 
 data class MainUiPage(
@@ -14,7 +14,7 @@ data class MainUiPage(
 data class BuildingUiDto(
     val id: Long,
     val name: String,
-    val point: Geometry?,
+    val point: PointDto?,
     val charts: Map<SensorGroup, Chart>,
     val blocks: List<BlockUiDto>,
 )
@@ -29,6 +29,7 @@ data class BlockUiDto(
 data class SensorUiDto(
     val id: Long,
     val name: String,
+    val type: SensorSubgroup,
     val charts: Map<SensorGroup, Chart>,
 )
 
@@ -44,13 +45,6 @@ data class Chart(
 )
 
 data class ChartItem(
-    val date: LocalDateTime,
-    val value: Double,
-)
-
-data class ChartData(
-    val sensorId: Long,
-    val blockId: Long,
     val date: LocalDateTime,
     val value: Double,
 )

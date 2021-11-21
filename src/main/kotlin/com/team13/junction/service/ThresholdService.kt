@@ -3,6 +3,7 @@ package com.team13.junction.service
 import com.team13.junction.model.SensorSubgroup
 import com.team13.junction.model.SensorSubgroup.DISHWASHER_COLD
 import com.team13.junction.model.SensorSubgroup.DISHWASHER_HOT
+import com.team13.junction.model.SensorSubgroup.ELECTRICITY
 import com.team13.junction.model.SensorSubgroup.MIXER_COLD
 import com.team13.junction.model.SensorSubgroup.MIXER_HOT
 import com.team13.junction.model.SensorSubgroup.SHOWER_COLD
@@ -22,5 +23,6 @@ object ThresholdService {
             DISHWASHER_COLD -> 10.0
             MIXER_HOT -> 10.0
             MIXER_COLD -> 10.0
+            ELECTRICITY -> 10.0
         }
 }
